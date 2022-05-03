@@ -2,6 +2,7 @@ from flask import Flask, render_template
 import psycopg2
 from psycopg2 import pool
 import os
+from algorithm import algo
 
 POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
 pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL, database="spaced")
