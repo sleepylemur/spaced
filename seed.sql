@@ -2,7 +2,7 @@ drop table if exists questions cascade;
 create table questions (
   id serial primary key,
   question text,
-  answer text,
+  answer text
 );
 
 drop table if exists history cascade;
@@ -17,7 +17,7 @@ create table history (
     on update cascade
 );
 
-insert into questions (question) values
-('a?'),
-('b?');
+insert into questions (question,answer) values
+('a?','no'),
+('b?','yes');
 
