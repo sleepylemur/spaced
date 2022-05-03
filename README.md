@@ -11,3 +11,8 @@
 createdb spaced
 ```
 
+## DB seed
+```
+psql -f seed.sql -d spaced
+```
+
