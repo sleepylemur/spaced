@@ -5,6 +5,12 @@ create table questions (
   answer text
 );
 
+drop table if exists user cascade;
+create table questions (
+  id serial primary key,
+  username text,
+);
+
 drop table if exists history cascade;
 create table history (
   id serial primary key,
