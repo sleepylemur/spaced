@@ -18,7 +18,17 @@ create table history (
     on update cascade
 );
 
-insert into questions (question,answer) values
+insert into questions (question, answer) values
 ('a?','no'),
-('b?','yes');
+('b?','yes'),
+('c?','yes'),
+('d?','yes'),
+('e?','yes');
 
+-- insert into history (question_id, correct) values
+-- (1, true),
+-- (4, false),
+-- (3, false),
+-- (1, true),
+-- (2, true),
+-- (1, true);
