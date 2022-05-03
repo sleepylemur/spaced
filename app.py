@@ -1,9 +1,10 @@
 from flask import Flask, render_template
 import psycopg2
+from psycopg2 import pool
 import os
 
 POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
-pool = psycopg2.pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
+pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
 
 app = Flask(__name__)
 
