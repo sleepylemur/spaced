@@ -10,6 +10,7 @@ create table history (
   id serial primary key,
   correct bool,
   question_id int,
+  ts timestamp,
 
   constraint fk_question_id foreign key(question_id)
     references questions(id)
