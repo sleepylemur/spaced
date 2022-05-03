@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import psycopg2
 from psycopg2 import pool
 import os
@@ -58,8 +58,44 @@ def next_question(conn):
         return question, question_id
 
 
+@app.route("/signup")
+def signup():
+    ...
+
+
+@app.route("/signin")
+def signin():
+    ...
+
+
 @app.route("/", methods=["POST", "GET"])
-def hello_world():
+def home():
+    if loggedin == True:
+        if request.method == "POST":
+            user_answer = request.form["answer"]
+            new_question, next_id = next_question()
+            question_id = request.form["question_id"]
+            print("question_id", question_id)
+            answer = get_answer(question_id)[0]
+            result = answer == user_answer
+            print("answer", answer)
+            return render_template(
+                "page.html",
+                question=new_question,
+                question_id=question_id,
+                answer=answer,
+                result=result,
+            )
+        else:
+            question, question_id = next_question()
+            return render_template(
+                "page.html", question=question, question_id=question_id
+            )
+    else:
+        redirect(url_for(app.signin))
+
+
+def get_answer(question_id):
     with pool.getconn() as conn:
         if request.method == "POST":
             user_answer = request.form["answer"]
@@ -70,11 +106,21 @@ def hello_world():
 
             new_question, next_id = next_question(conn)
             return render_template(
+<<<<<<< HEAD
                 "page.html", question=new_question, question_id=next_id, answer=answer,result=result
+=======
+                "page.html",
+                question=new_question,
+                question_id=question_id,
+                answer=answer,
+                result=result,
+>>>>>>> 1a7f279 (chore: merged)
             )
         else:
             question, question_id = next_question(conn)
-            return render_template("page.html", question=question, question_id=question_id)
+            return render_template(
+                "page.html", question=question, question_id=question_id
+            )
 
 
 def get_answer(conn, question_id):
@@ -86,9 +132,10 @@ def get_answer(conn, question_id):
         answer = cursor.fetchone()
         return answer
 
+
 def save_answer(conn, question_id, result):
     with conn.cursor() as cursor:
         cursor.execute(
             "insert into history (question_id, correct, ts) values (%(question_id)s, %(correct)s, current_timestamp)",
-            {'question_id': question_id, 'correct': result}
+            {"question_id": question_id, "correct": result},
         )
