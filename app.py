@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello_world():
-    with pool.get_conn() as conn:
+    with pool.getconn() as conn:
         with conn.cursor() as cursor:
             query = cursor.execute("select * from questions")
             result = query.fetch_all()
