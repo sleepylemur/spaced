@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  Spaced
+</h1>
+<h2 class="subtitle">
+  Practice terms.
+</h2>
+    <form action="/" method="POST">
+      <p>{{result}}</p>
+      <p>{{question}}</p>
+      <input type="hidden" name="question_id" value="{{question_id}}" />
+      <input
+        type="text"
+        width="200"
+        name="answer"
+        placeholder="Enter in the answer here"
+      />
+    </form>
+{% endblock %}
+
+<!-- <!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Spaced</title>
+  </head>
+  <body>
+    <form action="/" method="POST">
+      <p>{{result}}</p>
+      <p>{{question}}</p>
+      <input type="hidden" name="question_id" value="{{question_id}}" />
+      <input
+        type="text"
+        width="200"
+        name="answer"
+        placeholder="Enter in the answer here"
+      />
+    </form>
+  </body>
+</html> -->
