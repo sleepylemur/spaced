@@ -119,28 +119,32 @@ def index():
     #     redirect(url_for(app.login))
 
 
-def get_answer(question_id):
-    with pool.getconn() as conn:
-        if request.method == "POST":
-            user_answer = request.form["answer"]
-            question_id = request.form["question_id"]
-            answer = get_answer(conn, question_id)[0]
-            result = answer == user_answer
-            save_answer(conn, question_id, result)
+# @app.route("/", methods=["POST", "GET"])
+# def hello_world():
+#     conn = pool.getconn()
+#     try:
+#         if request.method == "POST":
+#             user_answer = request.form["answer"]
+#             question_id = request.form["question_id"]
+#             answer = get_answer(conn, question_id)[0]
+#             result = answer == user_answer
+#             save_answer(conn, question_id, result)
 
-            new_question, next_id = next_question(conn)
-            return render_template(
-                "page.html",
-                question=new_question,
-                question_id=next_id,
-                answer=answer,
-                result=result,
-            )
-        else:
-            question, question_id = next_question(conn)
-            return render_template(
-                "page.html", question=question, question_id=question_id
-            )
+#             new_question, next_id = next_question(conn)
+#             return render_template(
+#                 "page.html",
+#                 question=new_question,
+#                 question_id=next_id,
+#                 answer=answer,
+#                 result=result,
+#             )
+#         else:
+#             question, question_id = next_question(conn)
+#             return render_template("page.html", question=question, question_id=question_id)
+#     finally:
+#         pool.putconn(conn)
+
+
 
 
 def save_answer(conn, question_id, result):
