@@ -1,7 +1,8 @@
 drop table if exists questions cascade;
 create table questions (
   id serial primary key,
-  question text
+  question text,
+  answer text,
 );
 
 drop table if exists history cascade;
