@@ -1,4 +1,5 @@
-from flask import Flask, render_template
+from requests import request
+from flask import Flask, render_template, request
 import psycopg2
 from psycopg2 import pool
 import os
@@ -19,7 +20,15 @@ def next_question():
             return question, question_id
 
 
-@app.route("/")
+@app.route("/", methods=["POST", "GET"])
 def hello_world():
-    question, question_id = next_question()
-    return render_template("page.html", question=question, question_id=question_id)
+    if request.method == "POST":
+        question_id = request.args["question_id"]
+        return return_answer(question_id)
+    else:
+        question, question_id = next_question()
+        return render_template("page.html", question=question, question_id=question_id)
+
+
+def return_answer(question_id):
+    ...
