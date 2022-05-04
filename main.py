@@ -91,60 +91,38 @@ def next_question(conn):
 
 
 @main.route("/", methods=["POST", "GET"])
-def index():
-    return render_template("index.html")
+def hello_world():
+    conn = pool.getconn()
+    try:
+        if request.method == "POST":
+            user_answer = request.form["answer"]
+            question_id = request.form["question_id"]
+            answer = get_answer(conn, question_id)
+            result = answer == user_answer
+            save_answer(conn, question_id, result)
 
-    # if loggedin == True:
-    #     if request.method == "POST":
-    #         user_answer = request.form["answer"]
-    #         new_question, next_id = next_question()
-    #         question_id = request.form["question_id"]
-    #         print("question_id", question_id)
-    #         answer = get_answer(question_id)[0]
-    #         result = answer == user_answer
-    #         print("answer", answer)
-    #         return render_template(
-    #             "page.html",
-    #             question=new_question,
-    #             question_id=question_id,
-    #             answer=answer,
-    #             result=result,
-    #         )
-    #     else:
-    #         question, question_id = next_question()
-    #         return render_template(
-    #             "page.html", question=question, question_id=question_id
-    #         )
-    # else:
-    #     redirect(url_for(app.login))
+            new_question, next_id = next_question(conn)
+            return render_template(
+                "index.html",
+                question=new_question,
+                question_id=next_id,
+                answer=answer,
+                result=result,
+            )
+        else:
+            question, question_id = next_question(conn)
+            return render_template("index.html", question=question, question_id=question_id)
+    finally:
+        pool.putconn(conn)
 
 
-# @app.route("/", methods=["POST", "GET"])
-# def hello_world():
-#     conn = pool.getconn()
-#     try:
-#         if request.method == "POST":
-#             user_answer = request.form["answer"]
-#             question_id = request.form["question_id"]
-#             answer = get_answer(conn, question_id)[0]
-#             result = answer == user_answer
-#             save_answer(conn, question_id, result)
-
-#             new_question, next_id = next_question(conn)
-#             return render_template(
-#                 "page.html",
-#                 question=new_question,
-#                 question_id=next_id,
-#                 answer=answer,
-#                 result=result,
-#             )
-#         else:
-#             question, question_id = next_question(conn)
-#             return render_template("page.html", question=question, question_id=question_id)
-#     finally:
-#         pool.putconn(conn)
-
-
+def get_answer(conn, question_id):
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "select answer from questions where id = %(question_id)s",
+            {"question_id": question_id},
+        )
+        return cursor.fetchone()[0]
 
 
 def save_answer(conn, question_id, result):
@@ -153,3 +131,4 @@ def save_answer(conn, question_id, result):
             "insert into history (question_id, correct, ts) values (%(question_id)s, %(correct)s, current_timestamp)",
             {"question_id": question_id, "correct": result},
         )
+    conn.commit()
