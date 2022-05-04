@@ -1,3 +1,4 @@
+import time
 from flask import (
     Blueprint,
     render_template,
@@ -39,12 +40,13 @@ def check_password(conn, email, password) -> bool:
             "select password from users where email = %(email)s",
             {"email": email},
         )
-        hashed_password = cursor.fetchone()
+        hashed_password = cursor.fetchone()[0]
+        print("hashed_password", hashed_password)
 
     return check_password_hash(hashed_password, password)
 
 
-@auth.route("/login", methods=["GET", "POST"])
+@auth.route("/login", methods=["GET"])
 def login():
     return render_template("login.html")
 

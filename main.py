@@ -77,6 +77,7 @@ def next_question(conn):
 
 
 @main.route("/", methods=["POST", "GET"])
+@login_required
 def index():
     conn = pool.getconn()
     try:
