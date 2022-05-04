@@ -1,20 +1,21 @@
+from typing import Iterable
 from flask import Flask
 from flask_login import LoginManager
 import os
 import psycopg2
-from psycopg2 import pool
+# from psycopg2 import pool
 from .user import User
 from .auth import get_user
-
-POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
-pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
+from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.middleware.shared_data import SharedDataMiddleware
+from flask import g
 
 
 def create_app():
-    global pool
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-    app.config["POSTGRESQL_URL"] = POSTGRESQL_URL
+    app.config["POSTGRESQL_URL"] = os.getenv("POSTGRESQL_URL")
+    pool = psycopg2.pool.SimpleConnectionPool(1, 20, app.config["POSTGRESQL_URL"])
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
@@ -35,5 +36,14 @@ def create_app():
         print("login")
         # since the user_id is just the primary key of our user table, use it in the query for the user
         return get_user(int(user_id))
+
+    @app.before_request
+    def setup_db_connection():
+        g.conn = pool.getconn()
+
+    @app.after_request
+    def close_db_connection(response):
+        pool.putconn(g.conn)
+        return response
 
     return app
