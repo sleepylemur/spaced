@@ -3,10 +3,10 @@ from flask import Flask, g
 from flask_login import LoginManager
 import os
 import psycopg2
+from psycopg2 import pool
 
 # from psycopg2 import pool
 from .user import User
-from .auth import get_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 
