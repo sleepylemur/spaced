@@ -1,14 +1,17 @@
 from typing import Iterable
-from flask import Flask
+from flask import Flask, g
 from flask_login import LoginManager
 import os
 import psycopg2
+
 # from psycopg2 import pool
 from .user import User
 from .auth import get_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.middleware.shared_data import SharedDataMiddleware
-from flask import g
+
+POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
+pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
 
 
 def create_app():
@@ -33,9 +36,9 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        print("login")
-        # since the user_id is just the primary key of our user table, use it in the query for the user
-        return get_user(int(user_id))
+        with pool.getconn() as conn:
+            # since the user_id is just the primary key of our user table, use it in the query for the user
+            return User.load_user(conn, int(user_id))
 
     @app.before_request
     def setup_db_connection():

@@ -1,8 +1,11 @@
+CREATE TYPE question_status AS ENUM ('unknown', 'learning', 'known');
+
 drop table if exists questions cascade;
 create table questions (
   id serial primary key,
   question text,
-  answer text
+  answer text,
+  status question_status
 );
 
 drop table if exists users cascade;
@@ -25,12 +28,12 @@ create table history (
     on update cascade
 );
 
-insert into questions (question, answer) values
-('a?','no'),
-('b?','yes'),
-('c?','yes'),
-('d?','yes'),
-('e?','yes');
+insert into questions (question, answer, status) values
+('a?','no','unknown'),
+('b?','yes','unknown'),
+('c?','yes','unknown'),
+('d?','yes','unknown'),
+('e?','yes','unknown');
 
 -- insert into history (question_id, correct) values
 -- (1, true),

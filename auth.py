@@ -20,30 +20,24 @@ POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
 pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
 
 
-def get_user_id(conn, email):
-    with conn.cursor() as cursor:
-        cursor.execute(
-            "select id,password from users where email = %(email)s",
-            {"email": email},
-        )
-        user_id = cursor.fetchone()
-    return user_id
-
-
-def get_user(conn, email) -> User:
-    return User(email)
-
-
-def check_password(conn, email, password) -> bool:
+def get_user_hashedpw(conn, email):
     with conn.cursor() as cursor:
         cursor.execute(
             "select password from users where email = %(email)s",
             {"email": email},
         )
         hashed_password = cursor.fetchone()[0]
-        print("hashed_password", hashed_password)
+    return hashed_password
 
-    return check_password_hash(hashed_password, password)
+
+def get_user_info(conn, email):
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "select id,password from users where email = %(email)s",
+            {"email": email},
+        )
+        id, hashed_password = cursor.fetchone()
+    return id, hashed_password
 
 
 @auth.route("/login", methods=["GET"])
@@ -59,11 +53,12 @@ def login_post():
     remember = True if request.form.get("remember") else False
 
     with pool.getconn() as conn:
-        if not check_password(conn, email, password):
+        user_id, hashedpw = get_user_info(conn, email)
+        if not check_password_hash(hashedpw, password):
             flash("Please check your login details and try again.")
             return redirect(url_for("auth.login"))
 
-        user = get_user(conn, email)
+        user = User.load_user(conn, int(user_id))
     # if the above check passes, then we know the user has the right credentials
     login_user(user, remember=remember)
     return redirect(url_for("main.profile"))
