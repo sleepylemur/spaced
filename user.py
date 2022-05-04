@@ -35,11 +35,3 @@ class User(flask_login.UserMixin):
     @property
     def is_authenticated(self):
         return True
-        # with pool.getconn() as conn:
-        #     with conn.cursor() as cursor:
-        #         cursor.execute(
-        #             "select id from users where username = %(username)s",
-        #             {"username": self.username},
-        #         )
-        #         answer = cursor.fetchone()
-        #         return answer
