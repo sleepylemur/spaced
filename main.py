@@ -5,7 +5,8 @@ from flask import (
     g
 )
 from flask_login import login_required
-from .user import User
+from flask_login import current_user
+
 
 
 main = Blueprint("main", __name__)
@@ -95,16 +96,17 @@ def index():
 def get_answer(question_id):
     with g.conn.cursor() as cursor:
         cursor.execute(
-            "select answer from questions where id = %(question_id)s",
-            {"question_id": question_id},
+            "select answer from questions where id = %(question_id)s and user_id = %(user_id)s",
+            {"question_id": question_id, "user_id": current_user.get_id()},
         )
-        return cursor.fetchone()[0]
+        answer, = cursor.fetchone()
+        return answer
 
 
 def save_answer(question_id, result):
     with g.conn.cursor() as cursor:
         cursor.execute(
-            "insert into history (question_id, correct, ts) values (%(question_id)s, %(correct)s, current_timestamp)",
-            {"question_id": question_id, "correct": result},
+            "insert into history (question_id, correct, user_id) values (%(question_id)s, %(correct)s, %(user_id)s)",
+            {"question_id": question_id, "correct": result, 'user_id': current_user.get_id()},
         )
     g.conn.commit()
