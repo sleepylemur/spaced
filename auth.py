@@ -5,9 +5,8 @@ from flask import (
     url_for,
     request,
     flash,
-    logout_user,
 )
-from flask_login import login_user
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .user import User
 import psycopg2
@@ -68,6 +67,7 @@ def login_post():
     return redirect(url_for("main.profile"))
 
 
+@auth.route("/logout")
 @login_required
 def logout():
     logout_user()

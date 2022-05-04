@@ -8,6 +8,7 @@ from flask import (
     current_app,
 )
 import flask_login
+from flask_login import login_required
 import psycopg2
 from psycopg2 import pool
 import os
@@ -20,6 +21,7 @@ main = Blueprint("main", __name__)
 
 
 @main.route("/profile")
+@login_required
 def profile():
     return render_template("profile.html")
 
@@ -75,7 +77,7 @@ def next_question(conn):
 
 
 @main.route("/", methods=["POST", "GET"])
-def hello_world():
+def index():
     conn = pool.getconn()
     try:
         if request.method == "POST":
@@ -95,7 +97,9 @@ def hello_world():
             )
         else:
             question, question_id = next_question(conn)
-            return render_template("index.html", question=question, question_id=question_id)
+            return render_template(
+                "index.html", question=question, question_id=question_id
+            )
     finally:
         pool.putconn(conn)
 
