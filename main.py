@@ -12,12 +12,29 @@ from flask_login import login_required
 import psycopg2
 from psycopg2 import pool
 import os
+from typing import Optional
 from .user import User
 
 POSTGRESQL_URL = os.getenv("POSTGRESQL_URL")
 pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
 
+
 main = Blueprint("main", __name__)
+
+# login_manager = flask_login.LoginManager()
+# login_manager.init_app(main)
+
+# @login_manager.user_loader
+# def user_loader(user_id):
+#     user = User(user_id)
+#     if not user.is_authenticated:
+#         return
+#     return user
+
+
+# @login_manager.unauthorized_handler
+# def unauthorized_handler():
+#     return "Unauthorized"
 
 
 @main.route("/profile")
