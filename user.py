@@ -2,10 +2,9 @@ import flask_login
 
 
 class User(flask_login.UserMixin):
-    def __init__(self, email,password) -> None:
+    def __init__(self, email) -> None:
         super().__init__()
         self.email = email
-        self.password = password
 
     @property
     def is_authenticated(self):

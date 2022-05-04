@@ -18,22 +18,6 @@ pool = pool.SimpleConnectionPool(1, 20, POSTGRESQL_URL)
 
 main = Blueprint("main", __name__)
 
-# login_manager = flask_login.LoginManager()
-# login_manager.init_app(main)
-
-
-# @login_manager.user_loader
-# def user_loader(name):
-#     user = User(name)
-#     if not user.is_authenticated:
-#         return
-#     return user
-
-
-# @login_manager.unauthorized_handler
-# def unauthorized_handler():
-#     return "Unauthorized"
-
 
 @main.route("/profile")
 def profile():

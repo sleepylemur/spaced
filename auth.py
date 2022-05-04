@@ -1,4 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import (
+    Blueprint,
+    render_template,
+    redirect,
+    url_for,
+    request,
+    flash,
+    logout_user,
+)
+from flask_login import login_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .user import User
 import psycopg2
@@ -19,6 +28,10 @@ def get_user_id(conn, email):
         )
         user_id = cursor.fetchone()
     return user_id
+
+
+def get_user(conn, email) -> User:
+    return User(email)
 
 
 def check_password(conn, email, password) -> bool:
@@ -49,13 +62,16 @@ def login_post():
             flash("Please check your login details and try again.")
             return redirect(url_for("auth.login"))
 
+        user = get_user(conn, email)
     # if the above check passes, then we know the user has the right credentials
+    login_user(user, remember=remember)
     return redirect(url_for("main.profile"))
 
 
-@auth.route("/logout")
+@login_required
 def logout():
-    return render_template("logout.html")
+    logout_user()
+    return redirect(url_for("main.index"))
 
 
 @auth.route("/signup")
@@ -84,10 +100,7 @@ def signup_post():
         return redirect(url_for("auth.login"))
 
     # create a new user with the form data. Hash the password so the plaintext version isn't saved.
-    new_user = User(
-        email=email,
-        password=generate_password_hash(password),
-    )
+    password = generate_password_hash(password)
 
     # add the new user to the database
 
@@ -95,7 +108,7 @@ def signup_post():
         with conn.cursor() as cursor:
             cursor.execute(
                 "insert into users (email,password) values (%(email)s,%(password)s)",
-                {"email": new_user.email, "password": new_user.password},
+                {"email": email, "password": password},
             )
 
     return redirect(url_for("auth.login"))
