@@ -1,12 +1,13 @@
 import flask_login
 from typing import Optional
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import g
 
 
 class User(flask_login.UserMixin):
     @staticmethod
-    def load_user(conn, user_id: int) -> Optional['User']:
-        with conn.cursor() as cursor:
+    def load_user(user_id: int) -> Optional['User']:
+        with g.conn.cursor() as cursor:
             cursor.execute("select email, password from users where id = %(user_id)s", {'user_id': user_id})
             row = cursor.fetchone()
             if row is None:
@@ -14,8 +15,8 @@ class User(flask_login.UserMixin):
             return User(user_id, row[0], row[1])
 
     @staticmethod
-    def new_user(conn, email, password) -> 'User':
-        with conn.cursor() as cursor:
+    def new_user(email, password) -> 'User':
+        with g.conn.cursor() as cursor:
             hashed_password = generate_password_hash(password)
             cursor.execute(
                 "insert into users (email, password) values (%(email)s, %(password)s) returning id",

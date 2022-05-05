@@ -36,9 +36,8 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        with pool.getconn() as conn:
-            # since the user_id is just the primary key of our user table, use it in the query for the user
-            return User.load_user(conn, int(user_id))
+        # since the user_id is just the primary key of our user table, use it in the query for the user
+        return User.load_user(int(user_id))
 
     @app.before_request
     def setup_db_connection():
