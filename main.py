@@ -111,7 +111,7 @@ def index():
         question_id = request.form["question_id"]
         answer = get_answer(question_id)
         result = answer == user_answer
-        save_answer(question_id, result)
+        save_answer(int(question_id), result)
         return redirect(url_for("main.index",answer=answer,result=result))
     else:
         stats = get_stats()
@@ -158,7 +158,8 @@ def get_answer(question_id):
         return answer
 
 
-def save_answer(question_id, result):
+def save_answer(question_id: int, result: bool) -> None:
+    required_count = 3
     with g.conn.cursor() as cursor:
         cursor.execute(
             "insert into history (question_id, correct, user_id) values (%(question_id)s, %(correct)s, %(user_id)s)",
@@ -168,4 +169,22 @@ def save_answer(question_id, result):
                 "user_id": current_user.get_id(),
             },
         )
+
+        # if question status is learning and we got it right 3 times in a row, switch it to known
+        cursor.execute(
+            "select status from questions where id = %(question_id)s and user_id = %(user_id)s",
+            {'question_id': question_id, 'user_id': current_user.get_id()},
+        )
+        status, = cursor.fetchone()
+        if status == QuestionStatus.LEARNING:
+            cursor.execute(
+                "select correct from history where question_id = %(question_id)s and user_id = %(user_id)s order by id desc limit %(required_count)s",
+                {'question_id': question_id, 'user_id': current_user.get_id(), 'required_count': required_count},
+            )
+            correct_count = sum(correct for correct, in cursor.fetchall())
+            if correct_count >= required_count:
+                cursor.execute(
+                    "update questions set status = %(status)s where id = %(question_id)s and user_id = %(user_id)s",
+                    {'question_id': question_id, 'user_id': current_user.get_id(), 'status': QuestionStatus.KNOWN},
+                )
     g.conn.commit()
