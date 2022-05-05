@@ -63,10 +63,10 @@ def next_question_sql():
         return question, question_id
 
 def next_question_learning(learning, known, history) -> Tuple[str, int]:
-    return learning[0][1], learning[0][0]
+    return learning[0]['question'], learning[0]['id']
 
 def next_question_known(known, history) -> Tuple[str, int]:
-    return known[0][1], known[0][0]
+    return known[0]['question'], known[0]['id']
 
 def next_question() -> Tuple[Optional[str], Optional[int]]:
     with g.conn.cursor() as cursor:
@@ -77,10 +77,10 @@ def next_question() -> Tuple[Optional[str], Optional[int]]:
         question_rows = cursor.fetchall()
         questions = {QuestionStatus.LEARNING: [], QuestionStatus.KNOWN: []}
         for question_id, question, status in question_rows:
-            questions[status].append((question_id, question))
+            questions[status].append({'id': question_id, 'question': question})
 
         cursor.execute("select correct, question_id from history where user_id = %(user_id)s order by id desc", {'user_id': current_user.get_id()})
-        history = [(row[1], row[0]) for row in cursor.fetchall()]
+        history = [{'question_id': row[1], 'correct': row[0]} for row in cursor.fetchall()]
     if len(questions[QuestionStatus.LEARNING]) > 0:
         return next_question_learning(questions[QuestionStatus.LEARNING], questions[QuestionStatus.KNOWN], history)
     if len(questions[QuestionStatus.KNOWN]) > 0:
