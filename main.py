@@ -1,3 +1,4 @@
+from typing import Optional, Tuple
 from flask import render_template, request, Blueprint, g, redirect, url_for
 from flask_login import login_required, current_user
 from .globals import QuestionStatus
@@ -61,14 +62,30 @@ def next_question_sql():
         question, question_id = cursor.fetchone()
         return question, question_id
 
-def next_question():
+def next_question_learning(learning, known, history) -> Tuple[str, int]:
+    return learning[0][1], learning[0][0]
+
+def next_question_known(known, history) -> Tuple[str, int]:
+    return known[0][1], known[0][0]
+
+def next_question() -> Tuple[Optional[str], Optional[int]]:
     with g.conn.cursor() as cursor:
+        cursor.execute(
+            "select id, question, status from questions where status = any (%(statuses)s::question_status[]) and user_id = %(user_id)s",
+            {'statuses': [QuestionStatus.LEARNING, QuestionStatus.KNOWN], 'user_id': current_user.get_id()}
+        )
+        question_rows = cursor.fetchall()
+        questions = {QuestionStatus.LEARNING: [], QuestionStatus.KNOWN: []}
+        for question_id, question, status in question_rows:
+            questions[status].append((question_id, question))
+
         cursor.execute("select correct, question_id from history where user_id = %(user_id)s order by id desc", {'user_id': current_user.get_id()})
         history = [(row[1], row[0]) for row in cursor.fetchall()]
-        cursor.execute("select id, question from questions where user_id = %(user_id)s", {'user_id': current_user.get_id()})
-        questions = {row[0]: row[1] for row in cursor.fetchall()}
-    print(history, questions)
-    return list(questions.values())[0], list(questions.keys())[0]
+    if len(questions[QuestionStatus.LEARNING]) > 0:
+        return next_question_learning(questions[QuestionStatus.LEARNING], questions[QuestionStatus.KNOWN], history)
+    if len(questions[QuestionStatus.KNOWN]) > 0:
+        return next_question_known(questions[QuestionStatus.KNOWN], history)
+    return None, None
 
 
 @main.route("/add_questions", methods=["POST"])
