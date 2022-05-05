@@ -12,7 +12,7 @@ def profile():
     return render_template("profile.html")
 
 
-def next_question():
+def next_question_sql():
     with g.conn.cursor() as cursor:
         cursor.execute(
             """
@@ -61,6 +61,15 @@ def next_question():
         question, question_id = cursor.fetchone()
         return question, question_id
 
+def next_question():
+    with g.conn.cursor() as cursor:
+        cursor.execute("select correct, question_id from history where user_id = %(user_id)s order by id desc", {'user_id': current_user.get_id()})
+        history = [(row[1], row[0]) for row in cursor.fetchall()]
+        cursor.execute("select id, question from questions where user_id = %(user_id)s", {'user_id': current_user.get_id()})
+        questions = {row[0]: row[1] for row in cursor.fetchall()}
+    print(history, questions)
+    return list(questions.values())[0], list(questions.keys())[0]
+
 
 @main.route("/add_questions", methods=["POST"])
 @login_required
@@ -86,23 +95,19 @@ def index():
         answer = get_answer(question_id)
         result = answer == user_answer
         save_answer(question_id, result)
-
-        new_question, next_id = next_question()
-        return render_template(
-            "index.html",
-            question=new_question,
-            question_id=next_id,
-            answer=answer,
-            result=result,
-        )
+        return redirect(url_for("main.index",answer=answer,result=result))
     else:
         stats = get_stats()
 
+        answer = request.args.get('answer')
+        result = request.args.get('result')
         question, question_id = next_question()
         return render_template(
             "index.html",
             question=question,
             question_id=question_id,
+            answer=answer,
+            result=result,
             learning=stats[QuestionStatus.LEARNING],
             known=stats[QuestionStatus.KNOWN],
             unknown=stats[QuestionStatus.UNKNOWN],
