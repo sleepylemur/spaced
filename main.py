@@ -2,6 +2,7 @@ from typing import Optional, Tuple
 from flask import render_template, request, Blueprint, g, redirect, url_for
 from flask_login import login_required, current_user
 from .globals import QuestionStatus
+from .algorithm import algo_known, algo_learning
 
 
 main = Blueprint("main", __name__)
@@ -62,27 +63,42 @@ def next_question_sql():
         question, question_id = cursor.fetchone()
         return question, question_id
 
+
 def next_question_learning(learning, known, history) -> Tuple[str, int]:
-    return learning[0]['question'], learning[0]['id']
+    question, question_id = algo_learning(learning, known, history)
+    return learning[0]["question"], learning[0]["id"]
+
 
 def next_question_known(known, history) -> Tuple[str, int]:
-    return known[0]['question'], known[0]['id']
+    return known[0]["question"], known[0]["id"]
+
 
 def next_question() -> Tuple[Optional[str], Optional[int]]:
     with g.conn.cursor() as cursor:
         cursor.execute(
             "select id, question, status from questions where status = any (%(statuses)s::question_status[]) and user_id = %(user_id)s",
-            {'statuses': [QuestionStatus.LEARNING, QuestionStatus.KNOWN], 'user_id': current_user.get_id()}
+            {
+                "statuses": [QuestionStatus.LEARNING, QuestionStatus.KNOWN],
+                "user_id": current_user.get_id(),
+            },
         )
         question_rows = cursor.fetchall()
         questions = {QuestionStatus.LEARNING: [], QuestionStatus.KNOWN: []}
         for question_id, question, status in question_rows:
-            questions[status].append({'id': question_id, 'question': question})
+            questions[status].append({"id": question_id, "question": question})
 
-        cursor.execute("select correct, question_id from history where user_id = %(user_id)s order by id desc", {'user_id': current_user.get_id()})
-        history = [{'question_id': row[1], 'correct': row[0]} for row in cursor.fetchall()]
+        cursor.execute(
+            "select correct, question_id, ts from history where user_id = %(user_id)s order by id desc",
+            {"user_id": current_user.get_id()},
+        )
+        history = [
+            {"question_id": row[1], "correct": row[0], "ts": row[2]}
+            for row in cursor.fetchall()
+        ]
     if len(questions[QuestionStatus.LEARNING]) > 0:
-        return next_question_learning(questions[QuestionStatus.LEARNING], questions[QuestionStatus.KNOWN], history)
+        return next_question_learning(
+            questions[QuestionStatus.LEARNING], questions[QuestionStatus.KNOWN], history
+        )
     if len(questions[QuestionStatus.KNOWN]) > 0:
         return next_question_known(questions[QuestionStatus.KNOWN], history)
     return None, None
@@ -112,12 +128,12 @@ def index():
         answer = get_answer(question_id)
         result = answer == user_answer
         save_answer(int(question_id), result)
-        return redirect(url_for("main.index",answer=answer,result=result))
+        return redirect(url_for("main.index", answer=answer, result=result))
     else:
         stats = get_stats()
 
-        answer = request.args.get('answer')
-        result = request.args.get('result')
+        answer = request.args.get("answer")
+        result = request.args.get("result")
         question, question_id = next_question()
         return render_template(
             "index.html",
@@ -173,18 +189,26 @@ def save_answer(question_id: int, result: bool) -> None:
         # if question status is learning and we got it right 3 times in a row, switch it to known
         cursor.execute(
             "select status from questions where id = %(question_id)s and user_id = %(user_id)s",
-            {'question_id': question_id, 'user_id': current_user.get_id()},
+            {"question_id": question_id, "user_id": current_user.get_id()},
         )
-        status, = cursor.fetchone()
+        (status,) = cursor.fetchone()
         if status == QuestionStatus.LEARNING:
             cursor.execute(
                 "select correct from history where question_id = %(question_id)s and user_id = %(user_id)s order by id desc limit %(required_count)s",
-                {'question_id': question_id, 'user_id': current_user.get_id(), 'required_count': required_count},
+                {
+                    "question_id": question_id,
+                    "user_id": current_user.get_id(),
+                    "required_count": required_count,
+                },
             )
             correct_count = sum(correct for correct, in cursor.fetchall())
             if correct_count >= required_count:
                 cursor.execute(
                     "update questions set status = %(status)s where id = %(question_id)s and user_id = %(user_id)s",
-                    {'question_id': question_id, 'user_id': current_user.get_id(), 'status': QuestionStatus.KNOWN},
+                    {
+                        "question_id": question_id,
+                        "user_id": current_user.get_id(),
+                        "status": QuestionStatus.KNOWN,
+                    },
                 )
     g.conn.commit()
