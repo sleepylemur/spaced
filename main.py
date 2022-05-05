@@ -1,12 +1,6 @@
-from flask import (
-    render_template,
-    request,
-    Blueprint,
-    g
-)
-from flask_login import login_required
-from flask_login import current_user
-
+from flask import render_template, request, Blueprint, g, redirect, url_for
+from flask_login import login_required, current_user
+from .globals import QuestionStatus
 
 
 main = Blueprint("main", __name__)
@@ -68,6 +62,21 @@ def next_question():
         return question, question_id
 
 
+@main.route("/add_questions", methods=["POST"])
+@login_required
+def add_questions():
+    with g.conn.cursor() as cursor:
+        cursor.execute(
+            """update questions set status = 'learning' from
+            (select id from questions where status = 'unknown' limit 5) as unknown_rows
+            where questions.id = unknown_rows.id
+            RETURNING questions.id;"""
+        )
+    g.conn.commit()
+    # ids = [row[0] for row in cursor.fetchall()]
+    return redirect(url_for("main.index"))
+
+
 @main.route("/", methods=["POST", "GET"])
 @login_required
 def index():
@@ -87,10 +96,34 @@ def index():
             result=result,
         )
     else:
+        stats = get_stats()
+
         question, question_id = next_question()
         return render_template(
-            "index.html", question=question, question_id=question_id
+            "index.html",
+            question=question,
+            question_id=question_id,
+            learning=stats[QuestionStatus.LEARNING],
+            known=stats[QuestionStatus.KNOWN],
+            unknown=stats[QuestionStatus.UNKNOWN],
         )
+
+
+def get_stats():
+    data = {
+        QuestionStatus.KNOWN: 0,
+        QuestionStatus.LEARNING: 0,
+        QuestionStatus.UNKNOWN: 0,
+    }
+    with g.conn.cursor() as cursor:
+        cursor.execute(
+            "select count(*),status from questions where user_id = %(user_id)s group by status",
+            {"user_id": current_user.get_id()},
+        )
+        res = cursor.fetchall()
+        for k, v in res:
+            data[v] = k
+        return data
 
 
 def get_answer(question_id):
@@ -99,7 +132,7 @@ def get_answer(question_id):
             "select answer from questions where id = %(question_id)s and user_id = %(user_id)s",
             {"question_id": question_id, "user_id": current_user.get_id()},
         )
-        answer, = cursor.fetchone()
+        (answer,) = cursor.fetchone()
         return answer
 
 
@@ -107,6 +140,10 @@ def save_answer(question_id, result):
     with g.conn.cursor() as cursor:
         cursor.execute(
             "insert into history (question_id, correct, user_id) values (%(question_id)s, %(correct)s, %(user_id)s)",
-            {"question_id": question_id, "correct": result, 'user_id': current_user.get_id()},
+            {
+                "question_id": question_id,
+                "correct": result,
+                "user_id": current_user.get_id(),
+            },
         )
     g.conn.commit()

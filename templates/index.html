@@ -1,4 +1,5 @@
 {% extends "base.html" %} {% block content %}
+<div>
 <h1 class="title">Spaced</h1>
 <h2 class="subtitle">Practice terms.</h2>
 <form action="/" method="POST">
@@ -13,28 +14,21 @@
     placeholder="Enter in the answer here"
   />
 </form>
+  </div>
+<div>
+<h1 name="stats">Stats</h1>
+<h2 name="unknown">Unknown tokens</h2>
+  <p>{{unknown}}</p>
+<h2>Currently learning tokens</h2>
+  <p>{{learning}}</p>
+<h2>Known tokens</h2>
+  <p>{{known}}</p>
+<form action="/add_questions" method="POST">
+<button class="button is-block is-info is-large is-fullwidth">Add 5 unknown to learning</button>
+</form>
+</div>
 <script>
   const answerInput = document.getElementById("answer");
   answerInput.focus();
 </script>
 {% endblock %}
-
-<!-- <!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <title>Spaced</title>
-  </head>
-  <body>
-    <form action="/" method="POST">
-      <p>{{result}}</p>
-      <p>{{question}}</p>
-      <input type="hidden" name="question_id" value="{{question_id}}" />
-      <input
-        type="text"
-        width="200"
-        name="answer"
-        placeholder="Enter in the answer here"
-      />
-    </form>
-  </body>
-</html> -->
