@@ -88,7 +88,7 @@ def next_question() -> Tuple[Optional[str], Optional[int]]:
             questions[status].append({"id": question_id, "question": question})
 
         cursor.execute(
-            "select correct, question_id, ts from history where user_id = %(user_id)s order by id desc",
+            "select correct, question_id, ts from history where user_id = %(user_id)s order by id asc",
             {"user_id": current_user.get_id()},
         )
         history = [

@@ -48,6 +48,8 @@ def time_history(history):
                 time_score[question_id] = time_to_forget(
                     ts, previous_time[question_id], expected_time
                 )
+            else:
+                time_score[question_id] = 2
         else:
             time_score[question_id] = 1
         previous_time[question_id] = ts
@@ -66,7 +68,7 @@ def return_scores(history):
 
 
 def algo_learning(learning_qs, known_qs, history):
-    time_history(reversed(history))
+    time_history(history)
     scores = return_scores(history)
     pqueue = PriorityQueue()
     for k, v in scores.items():
